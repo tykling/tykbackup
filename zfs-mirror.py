@@ -64,32 +64,31 @@ class ZfsMirror:
 
                 # daily snapshot found, check remotes
                 for target in targets:
-                    if 'username' in target:
-                        userstring = "%s@" % target.username
-                    else:
-                        userstring = ""
-                    remotestring = "zfs://%(userstring)s%(hostname)s/%(targetfs)s/%(dataset)s" % (target.username, target.hostname, target.targetfs, dataset._url.path)
-                    self.logger.debug("remotestring is %s" % remotestring)
-
-                    # open remote dataset
-                    try:
-                        remote = zfs.open(remotestring)
-                    except process.DatasetNotFoundError:
-                        self.logger.exception("Unable to open remote pool: %s" % remotestring)
-                        sys.exit(1)
+                    self.logger.debug("processing target %s" % target)
+                    # check if target fs exists
+                    remote = self.get_or_create_dataset("zfs://%(hostname)s/%(targetfs)s/%(dataset)s" % (target.hostname, target.targetfs))
 
                     if self.get_daily_snapshot(remote):
-                        # this target already has this snapshot, continue with the next target
+                        self.logger.debug("the target %s already has the snapshot %s" % (target, snapshot.name))
                         continue
 
                     # this target does not have todays snapshot for this dataset, send it!
-                    sender = snapshot.send()
-                    reciever = zfs.receive(remotestring)
-                    while True:
-                        receiver.write(sender.read(1024))
-                        print("wrote 1024 bytes to receiver")
-                    print("done")
+                    #sender = snapshot.send()
+                    #reciever = zfs.receive(remotestring)
+                    #while True:
+                    #    receiver.write(sender.read(1024))
+                    #    print("wrote 1024 bytes to receiver")
+                    print("would have sent snapshot %s to receiver %s here..." % (snapshot.name, remotestring)
+)
 
+    def get_or_create_dataset(self, name):
+        # open dataset
+        try:
+            dataset = zfs.open(dataset)
+        except process.DatasetNotFoundError:
+            self.logger.exception("Unable to open dataset: %s - creating..." % remotestring)
+            dataset = zfs.create(name, force=True)
+        return dataset
 
     def get_daily_snapshot(self, dataset):
         for snapshot in dataset.snapshots():
