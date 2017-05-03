@@ -1,0 +1,27 @@
+# define backup targets
+"targets":
+  - "hostname": "backup.example.com"
+    "username": "backupuser"
+    "targetfs": "tank/backups/myserver"
+
+# limit mirroring to these pools (default is to mirror all pools)
+"pools":
+  - "tank"
+  - "zroot"
+
+# skip these datasets and any children they may have (default is to mirror all datasets and all children)
+"skip_datasets":
+  - "zroot/tmp"
+  - "tank/reserved"
+
+# retention rules
+"retention":
+  "defaults":
+    "daily": 14
+    "weekly": 8
+    "monthly": 18
+  "tank/important":
+    "daily": 30
+    "weekly": 20
+    "monthly": 60
+

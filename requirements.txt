@@ -1,0 +1,5 @@
+configparser==3.5.0
+pid==2.1.1
+PyYAML==3.12
+weir==0.4.0
+
