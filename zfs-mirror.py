@@ -72,14 +72,35 @@ class ZfsMirror:
                         self.logger.debug("the target %s already has the snapshot %s" % (target, snapshot.name))
                         continue
 
-                    # this target does not have todays snapshot for this dataset, send it!
-                    #sender = snapshot.send()
+                    # this target does not have todays snapshot for this dataset,
+                    # check if target has any previous daily snapshots so we can send incremental
+                    remote_daily_snaps = sorted(snap.name for snap in zfs.open("zfs://bong.tyknet.dk/tank/root").snapshots() if "daily-" in snap.name)
+
+                    if remote_daily_snaps:
+                        # we have a daily snapshot on the remote node,
+                        # do an incremental send, include all intermediate
+                        # snapshots (weekly, monthly, yearly),
+                        # send based on the latest remote daily snapshot
+                        latest_remote_snap = zfs.open(remote_daily_snaps[-1])
+                        local_counterpart = self.remote_to_local_name(latest_remote_snap)
+                        sender = snapshot.send(base=local_counterpart, intermediates=True)
+                    else:
+                        # this target has no daily snapshots for this dataset,
+                        # we cannot do an incremental send,
+                        # do a full send
+                        sender = snapshot.send()
                     #reciever = zfs.receive(remotestring)
                     #while True:
                     #    receiver.write(sender.read(1024))
                     #    print("wrote 1024 bytes to receiver")
-                    print("would have sent snapshot %s to receiver %s here..." % (snapshot.name, remotestring)
-)
+                    print("would have sent snapshot %s to receiver %s here..." % (snapshot.name, remotestring))
+
+
+    def remote_to_local_snap(self, remotestring, target):
+        """
+        Return the local counterpart of a remote snapshot
+        """
+        pass
 
     def get_or_create_dataset(self, name):
         # open dataset
@@ -95,7 +116,6 @@ class ZfsMirror:
             if snapshot.name == self.dailystring:
                 return snapshot
         return False
-
 
     def get_child_datasets(self, parent, recursive=True):
         # build and return a list of children (and recursively their children)
